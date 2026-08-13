@@ -8,6 +8,7 @@
     "dev:client": "vite",
     "dev:server": "tsx server/src/index.ts",
     "server": "tsx server/src/index.ts",
+    "seed": "tsx server/src/seed.ts",
     "start:all": "npm run dev",
     "build": "vite build",
     "build:dev": "vite build --mode development",

@@ -1,5 +1,6 @@
-import mongoose from "mongoose";
+import dotenv from "dotenv";
 import dns from "dns";
+import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 import {
   User,
@@ -16,22 +17,16 @@ try {
   dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 } catch {}
 
+dotenv.config();
+
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/greenleaf-stockroom";
 
-export async function connectDB() {
+export async function runSeeder() {
   try {
-    console.log(`Connecting to MongoDB at: ${MONGODB_URI}`);
+    console.log(`Connecting to MongoDB at: ${MONGODB_URI.replace(/:([^@]+)@/, ":****@")}`);
     await mongoose.connect(MONGODB_URI);
     console.log("MongoDB Connected Successfully.");
-    await seedDB();
-  } catch (error) {
-    console.error("MongoDB connection error:", error);
-    process.exit(1);
-  }
-}
 
-async function seedDB() {
-  try {
     // 1. Chart of Accounts
     const coaCount = await ChartOfAccounts.countDocuments();
     if (coaCount === 0) {
@@ -51,6 +46,9 @@ async function seedDB() {
         { code: "6300", name: "Payroll Expense", type: "expense", is_system: true },
         { code: "6900", name: "Other Expense", type: "expense", is_system: true },
       ]);
+      console.log("Chart of Accounts seeded.");
+    } else {
+      console.log(`Chart of Accounts already has ${coaCount} documents.`);
     }
 
     // 2. Bank Registers
@@ -66,7 +64,7 @@ async function seedDB() {
           name: "Main Cash Drawer",
           kind: "cash",
           account_id: cashAcct?.id,
-          balance: 193.49, // Seed with initial transaction total
+          balance: 193.49,
           is_active: true,
         },
         {
@@ -84,6 +82,9 @@ async function seedDB() {
           is_active: true,
         },
       ]);
+      console.log("Bank accounts seeded.");
+    } else {
+      console.log(`Bank accounts already has ${bankCount} documents.`);
     }
 
     // 3. Tax Settings
@@ -91,51 +92,37 @@ async function seedDB() {
     if (taxCount === 0) {
       console.log("Seeding Tax settings...");
       await TaxSettings.create({ rate: 0.075 });
+      console.log("Tax settings seeded.");
+    } else {
+      console.log(`Tax settings already present.`);
     }
 
     // 4. ProductCategory
-    let catId: string | undefined = undefined;
     const catCount = await ProductCategory.countDocuments();
     if (catCount === 0) {
       console.log("Seeding Categories...");
-      const category = await ProductCategory.create({ name: "Accessories" });
-      catId = category.id;
+      await ProductCategory.insertMany([
+        { name: "Electronics" },
+        { name: "Household" },
+        { name: "Grocery" },
+        { name: "Fashion" },
+        { name: "Health & Beauty" },
+        { name: "Accessories" },
+      ]);
+      console.log("Categories seeded.");
     } else {
-      const category = await ProductCategory.findOne();
-      catId = category?.id;
+      console.log(`Categories already has ${catCount} documents.`);
     }
 
     // 5. Products
     const prodCount = await Product.countDocuments();
     if (prodCount === 0) {
       console.log("Seeding Products...");
-
-      // Get or create extra categories
-      const catElec = await ProductCategory.findOneAndUpdate(
-        { name: "Electronics" },
-        { name: "Electronics" },
-        { upsert: true, new: true }
-      );
-      const catHousehold = await ProductCategory.findOneAndUpdate(
-        { name: "Household" },
-        { name: "Household" },
-        { upsert: true, new: true }
-      );
-      const catGrocery = await ProductCategory.findOneAndUpdate(
-        { name: "Grocery" },
-        { name: "Grocery" },
-        { upsert: true, new: true }
-      );
-      const catFashion = await ProductCategory.findOneAndUpdate(
-        { name: "Fashion" },
-        { name: "Fashion" },
-        { upsert: true, new: true }
-      );
-      const catHealth = await ProductCategory.findOneAndUpdate(
-        { name: "Health & Beauty" },
-        { name: "Health & Beauty" },
-        { upsert: true, new: true }
-      );
+      const catElec = await ProductCategory.findOne({ name: "Electronics" });
+      const catHousehold = await ProductCategory.findOne({ name: "Household" });
+      const catGrocery = await ProductCategory.findOne({ name: "Grocery" });
+      const catFashion = await ProductCategory.findOne({ name: "Fashion" });
+      const catHealth = await ProductCategory.findOne({ name: "Health & Beauty" });
 
       await Product.insertMany([
         {
@@ -146,7 +133,7 @@ async function seedDB() {
           low_stock_threshold: 5,
           unit_cost: 12000,
           selling_price: 28500,
-          category_id: catElec.id,
+          category_id: catElec?.id,
           description: "Noise-cancelling wireless overhead headset with 30hr battery.",
           imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80",
         },
@@ -158,7 +145,7 @@ async function seedDB() {
           low_stock_threshold: 3,
           unit_cost: 35000,
           selling_price: 75000,
-          category_id: catHousehold.id,
+          category_id: catHousehold?.id,
           description: "High-back mesh chair with lumbar support and adjustable armrests.",
           imageUrl: "https://images.unsplash.com/photo-1541558869434-2840d308329a?w=400&q=80",
         },
@@ -170,7 +157,7 @@ async function seedDB() {
           low_stock_threshold: 10,
           unit_cost: 3500,
           selling_price: 8500,
-          category_id: catElec.id,
+          category_id: catElec?.id,
           description: "Water-resistant protective neoprene sleeve fits 13-15 inch laptops.",
           imageUrl: "https://images.unsplash.com/photo-1618478594486-c65b899c4936?w=400&q=80",
         },
@@ -182,7 +169,7 @@ async function seedDB() {
           low_stock_threshold: 10,
           unit_cost: 1800,
           selling_price: 4500,
-          category_id: catHousehold.id,
+          category_id: catHousehold?.id,
           description: "Double-walled 750ml vacuum insulated bottle. Keeps cold 24hrs.",
           imageUrl: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400&q=80",
         },
@@ -194,7 +181,7 @@ async function seedDB() {
           low_stock_threshold: 15,
           unit_cost: 800,
           selling_price: 2200,
-          category_id: catHealth.id,
+          category_id: catHealth?.id,
           description: "100% natural moisturising lotion with shea butter and vitamin E.",
           imageUrl: "https://images.unsplash.com/photo-1570194065650-d99fb4d8a609?w=400&q=80",
         },
@@ -206,7 +193,7 @@ async function seedDB() {
           low_stock_threshold: 5,
           unit_cost: 2500,
           selling_price: 7500,
-          category_id: catFashion.id,
+          category_id: catFashion?.id,
           description: "Premium cotton pique polo shirt, available in multiple colours.",
           imageUrl: "https://images.unsplash.com/photo-1586363104862-3a5e2ab60d99?w=400&q=80",
         },
@@ -218,7 +205,7 @@ async function seedDB() {
           low_stock_threshold: 4,
           unit_cost: 8000,
           selling_price: 22000,
-          category_id: catElec.id,
+          category_id: catElec?.id,
           description: "360° sound, IPX7 waterproof, 12hr playtime. Pairs with any device.",
           imageUrl: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80",
         },
@@ -230,7 +217,7 @@ async function seedDB() {
           low_stock_threshold: 20,
           unit_cost: 3200,
           selling_price: 6500,
-          category_id: catGrocery.id,
+          category_id: catGrocery?.id,
           description: "Long-grain aged basmati rice. Ideal for jollof, pilaf, and more.",
           imageUrl: "https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=400&q=80",
         },
@@ -242,7 +229,7 @@ async function seedDB() {
           low_stock_threshold: 10,
           unit_cost: 700,
           selling_price: 2000,
-          category_id: catElec.id,
+          category_id: catElec?.id,
           description: "Nylon braided 100W USB-C to USB-C cable. 2-metre length.",
           imageUrl: "https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=400&q=80",
         },
@@ -254,55 +241,85 @@ async function seedDB() {
           low_stock_threshold: 8,
           unit_cost: 1500,
           selling_price: 4000,
-          category_id: catHealth.id,
+          category_id: catHealth?.id,
           description: "Lightweight, non-greasy SPF 50 PA+++ sunscreen for daily use.",
           imageUrl: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&q=80",
         },
       ]);
+      console.log("Products seeded.");
+    } else {
+      console.log(`Products already has ${prodCount} documents.`);
     }
 
     // 6. Clients
-    let clientId: string | undefined = undefined;
     const clientCount = await Client.countDocuments();
     if (clientCount === 0) {
       console.log("Seeding Clients...");
-      const client = await Client.create({
-        name: "Demo Retail Customer",
-        email: "demo@customer.example",
-        company: "Demo Co",
-        phone: "+1 555-0199",
-        address: "123 Retail Lane, Commerce City",
-        notes: "Pre-seeded system customer",
-      });
-      clientId = client.id;
-    } else {
-      const client = await Client.findOne();
-      clientId = client?.id;
-    }
-
-    // 7. Users & Roles
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log("Seeding Users...");
-      const adminHash = bcrypt.hashSync("AdminDemo123!", 10);
-      const cashierHash = bcrypt.hashSync("CashierDemo123!", 10);
-
-      await User.insertMany([
+      await Client.insertMany([
         {
-          email: "admin@clientapp.demo",
-          passwordHash: adminHash,
-          role: "admin",
-          fullName: "Admin User",
+          name: "Demo Retail Customer",
+          email: "demo@customer.example",
+          company: "Demo Co",
+          phone: "+1 555-0199",
+          address: "123 Retail Lane, Commerce City",
+          notes: "Pre-seeded system customer",
         },
         {
-          email: "cashier@clientapp.demo",
-          passwordHash: cashierHash,
-          role: "staff",
-          fullName: "Cashier Staff",
+          name: "Acme Enterprise",
+          email: "procurement@acme.example",
+          company: "Acme Corp",
+          phone: "+1 555-0250",
+          address: "456 Enterprise Way, Metropolis",
+          notes: "Corporate client",
         },
       ]);
+      console.log("Clients seeded.");
+    } else {
+      console.log(`Clients already has ${clientCount} documents.`);
     }
-  } catch (err) {
-    console.error("Seeding database failed:", err);
+
+    // 7. Users & Roles (Programmatic Seeding with Bcrypt)
+    const adminExists = await User.findOne({ email: "admin@clientapp.demo" });
+    if (!adminExists) {
+      console.log("Seeding Admin account (admin@clientapp.demo)...");
+      const adminHash = bcrypt.hashSync("AdminDemo123!", 10);
+      await User.create({
+        email: "admin@clientapp.demo",
+        passwordHash: adminHash,
+        role: "admin",
+        fullName: "System Admin",
+      });
+      console.log("Admin account created successfully.");
+    } else {
+      console.log("Admin account (admin@clientapp.demo) already exists.");
+    }
+
+    const cashierExists = await User.findOne({ email: "cashier@clientapp.demo" });
+    if (!cashierExists) {
+      console.log("Seeding Cashier account (cashier@clientapp.demo)...");
+      const cashierHash = bcrypt.hashSync("CashierDemo123!", 10);
+      await User.create({
+        email: "cashier@clientapp.demo",
+        passwordHash: cashierHash,
+        role: "staff",
+        fullName: "Cashier Staff",
+      });
+      console.log("Cashier account created successfully.");
+    } else {
+      console.log("Cashier account (cashier@clientapp.demo) already exists.");
+    }
+
+    console.log("✅ Database seeding completed successfully!");
+  } catch (error) {
+    console.error("❌ Database seeding failed:", error);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+    console.log("MongoDB connection closed.");
   }
+}
+
+// Execute if run directly
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith("seed.ts")) {
+  runSeeder();
 }
