@@ -33,12 +33,16 @@ const AuthContext = createContext<AuthContextValue>({
   user: null,
   role: null,
   loading: true,
-  signIn: async () => {},
-  signUp: async () => {},
-  signOut: () => {},
+  signIn: async () => { },
+  signUp: async () => { },
+  signOut: () => { },
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Config & Helpers ─────────────────────────────────────────────────────────
+
+// Dynamically use Vercel environment variable or fallback to live Render URL
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "https://greenleaf-pos-api.onrender.com";
 
 const TOKEN_KEY = "auth_token";
 
@@ -77,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    fetch("/api/auth/session", {
+    fetch(`${API_BASE_URL}/api/auth/session`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
@@ -93,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const res = await fetch("/api/auth/signin", {
+    const res = await fetch(`${API_BASE_URL}/api/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -109,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = useCallback(
     async (email: string, password: string, fullName?: string) => {
-      const res = await fetch("/api/auth/signup", {
+      const res = await fetch(`${API_BASE_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, fullName }),
