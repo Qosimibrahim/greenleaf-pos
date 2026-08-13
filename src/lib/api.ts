@@ -3,11 +3,23 @@
  * Injects Authorization: Bearer <token> from localStorage on every request.
  */
 
+const FALLBACK_RENDER_URL = "https://greenleaf-pos-api.onrender.com";
+
 /**
  * Returns the base origin server URL without trailing slash (e.g. "https://greenleaf-pos-api.onrender.com").
  */
 export function getApiOrigin(): string {
-  const envUrl = import.meta.env.VITE_API_URL || "https://greenleaf-pos-api.onrender.com";
+  // 1. Check environment variable
+  let envUrl = import.meta.env.VITE_API_URL;
+
+  // 2. Fallback to Render URL if on Vercel/Production
+  if (!envUrl && typeof window !== "undefined" && !window.location.hostname.includes("localhost")) {
+    envUrl = FALLBACK_RENDER_URL;
+  }
+
+  // 3. Fallback to Localhost for local development
+  envUrl = envUrl || FALLBACK_RENDER_URL;
+
   return envUrl.replace(/\/+$/, "").replace(/\/api$/, "");
 }
 
@@ -20,13 +32,24 @@ export function getApiBaseUrl(): string {
 }
 
 function normalizeApiPath(path: string): string {
-  const base = getApiBaseUrl();
-  const cleanPath = path.startsWith("/api/")
-    ? path.slice(4)
-    : path.startsWith("/")
-      ? path
-      : `/${path}`;
-  return `${base}${cleanPath}`;
+  const base = getApiBaseUrl(); // https://greenleaf-pos-api.onrender.com/api
+
+  // If full URL was passed in by mistake, return as-is
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+
+  // Strip leading /api or / if present
+  let cleanPath = path;
+  if (cleanPath.startsWith("/api/")) {
+    cleanPath = cleanPath.slice(5); // Removes '/api/'
+  } else if (cleanPath.startsWith("/api")) {
+    cleanPath = cleanPath.slice(4); // Removes '/api'
+  } else if (cleanPath.startsWith("/")) {
+    cleanPath = cleanPath.slice(1); // Removes leading '/'
+  }
+
+  return `${base}/${cleanPath}`;
 }
 
 function getToken(): string | null {
@@ -88,4 +111,3 @@ export const api = {
 };
 
 export { getToken };
-
