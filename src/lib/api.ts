@@ -3,7 +3,7 @@
  * Injects Authorization: Bearer <token> from localStorage on every request.
  */
 
-const BASE = "/api";
+const BASE = (import.meta.env.VITE_API_URL || "https://greenleaf-pos-api.onrender.com") + "/api";
 
 function getToken(): string | null {
   return localStorage.getItem("auth_token");
