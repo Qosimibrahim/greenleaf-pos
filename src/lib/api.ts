@@ -3,7 +3,31 @@
  * Injects Authorization: Bearer <token> from localStorage on every request.
  */
 
-const BASE = (import.meta.env.VITE_API_URL || "https://greenleaf-pos-api.onrender.com") + "/api";
+/**
+ * Returns the base origin server URL without trailing slash (e.g. "https://greenleaf-pos-api.onrender.com").
+ */
+export function getApiOrigin(): string {
+  const envUrl = import.meta.env.VITE_API_URL || "https://greenleaf-pos-api.onrender.com";
+  return envUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+}
+
+/**
+ * Returns the centralized API base URL including the `/api` prefix (e.g. "https://greenleaf-pos-api.onrender.com/api").
+ */
+export function getApiBaseUrl(): string {
+  const origin = getApiOrigin();
+  return `${origin}/api`;
+}
+
+function normalizeApiPath(path: string): string {
+  const base = getApiBaseUrl();
+  const cleanPath = path.startsWith("/api/")
+    ? path.slice(4)
+    : path.startsWith("/")
+      ? path
+      : `/${path}`;
+  return `${base}${cleanPath}`;
+}
 
 function getToken(): string | null {
   return localStorage.getItem("auth_token");
@@ -17,7 +41,8 @@ function headers(extra?: Record<string, string>): Record<string, string> {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const fullUrl = normalizeApiPath(path);
+  const res = await fetch(fullUrl, {
     method,
     headers: headers(),
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -41,13 +66,15 @@ export const api = {
   put: <T>(path: string, body: unknown) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
   del: <T>(path: string) => request<T>("DELETE", path),
+  delete: <T>(path: string) => request<T>("DELETE", path),
 
   /** Upload a file via multipart/form-data. Returns { url, path }. */
   upload: async (path: string, file: File): Promise<{ url: string; path: string }> => {
     const token = getToken();
     const form = new FormData();
     form.append("file", file);
-    const res = await fetch(`${BASE}${path}`, {
+    const fullUrl = normalizeApiPath(path);
+    const res = await fetch(fullUrl, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
@@ -61,3 +88,4 @@ export const api = {
 };
 
 export { getToken };
+

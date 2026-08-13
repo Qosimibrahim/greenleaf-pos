@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, getApiOrigin } from "@/lib/api";
 
 /**
  * Fetches primary image URLs for a batch of product ids.
@@ -14,6 +14,7 @@ export function useProductImages(productIds: string[]) {
     queryFn: async () => {
       const ids = [...new Set(productIds)];
       const result: Record<string, string> = {};
+      const origin = getApiOrigin();
 
       await Promise.all(
         ids.map(async (pid) => {
@@ -26,7 +27,7 @@ export function useProductImages(productIds: string[]) {
               // storage_path is like "/uploads/filename.jpg" returned from server
               result[pid] = primary.storage_path.startsWith("http")
                 ? primary.storage_path
-                : primary.storage_path;
+                : `${origin}${primary.storage_path.startsWith("/") ? "" : "/"}${primary.storage_path}`;
             } else {
               result[pid] = "";
             }

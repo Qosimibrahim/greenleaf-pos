@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { getApiBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
     const token = localStorage.getItem("auth_token");
     if (token) {
-      const res = await fetch("/api/auth/session", {
+      const res = await fetch(`${getApiBaseUrl()}/auth/session`, {
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => null);
       if (res?.ok) {
@@ -85,7 +86,7 @@ function AuthPage() {
           <div className="relative flex items-center gap-3">
             <div
               className="grid h-10 w-10 place-items-center rounded-xl ring-1"
-              style={{ background: "rgba(253,254,253,0.12)", ringColor: "rgba(253,254,253,0.2)" }}
+              style={{ background: "rgba(253,254,253,0.12)", boxShadow: "0 0 0 1px rgba(253,254,253,0.2)" }}
             >
               <Boxes className="h-5 w-5" style={{ color: "#FDFEFD" }} />
             </div>

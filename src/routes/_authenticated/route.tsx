@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
+import { getApiBaseUrl } from "@/lib/api";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -9,7 +10,7 @@ export const Route = createFileRoute("/_authenticated")({
       throw redirect({ to: "/auth" });
     }
     // Verify session with the local JWT API
-    const res = await fetch("/api/auth/session", {
+    const res = await fetch(`${getApiBaseUrl()}/auth/session`, {
       headers: { Authorization: `Bearer ${token}` },
     }).catch(() => null);
 

@@ -17,7 +17,7 @@
  */
 
 import { useEffect, useRef, useCallback } from "react";
-import { getToken } from "@/lib/api";
+import { api } from "@/lib/api";
 
 export interface ScannedProduct {
   id: string;
@@ -67,18 +67,7 @@ export function useBarcodeScanner({
     if (code.length < minLength) return;
 
     try {
-      const token = getToken();
-      const res = await fetch(`/api/products?sku=${encodeURIComponent(code)}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      if (res.status === 404) {
-        onNotFound?.(code);
-        return;
-      }
-      if (!res.ok) throw new Error("Network error");
-
-      const product: ScannedProduct = await res.json();
+      const product = await api.get<ScannedProduct>(`/products?sku=${encodeURIComponent(code)}`);
       // Server returns a single object (findOne), not an array
       if (product && product.id) {
         onMatch(product);

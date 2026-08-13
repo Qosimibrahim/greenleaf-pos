@@ -1,5 +1,6 @@
 // Mocked Supabase client directing requests to our local Express / MongoDB backend.
 import type { Database } from './types';
+import { getApiBaseUrl, getApiOrigin } from '@/lib/api';
 
 // In-memory callbacks for auth state changes
 const authStateListeners: Array<(event: string, session: any) => void> = [];
@@ -19,6 +20,13 @@ function getAuthToken(): string | null {
   } catch {
     return null;
   }
+}
+
+function normalizeUrl(url: string): string {
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = getApiBaseUrl();
+  const cleanPath = url.startsWith("/api/") ? url.slice(4) : url.startsWith("/") ? url : `/${url}`;
+  return `${base}${cleanPath}`;
 }
 
 // Helper to make fetch requests
@@ -42,7 +50,8 @@ async function makeRequest(url: string, method: string, body?: any, isMultipart 
     options.body = isMultipart ? body : JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
+  const fullUrl = normalizeUrl(url);
+  const response = await fetch(fullUrl, options);
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -362,16 +371,18 @@ export const supabase = {
 
         async createSignedUrl(storagePath: string, expiresIn: number) {
           const filename = storagePath.split("/").pop();
-          const signedUrl = `/uploads/${filename}`;
+          const origin = getApiOrigin();
+          const signedUrl = `${origin}/uploads/${filename}`;
           return { data: { signedUrl }, error: null };
         },
 
         async createSignedUrls(paths: string[], expiresIn: number) {
+          const origin = getApiOrigin();
           const signedUrls = paths.map((p) => {
             const filename = p.split("/").pop();
             return {
               path: p,
-              signedUrl: `/uploads/${filename}`,
+              signedUrl: `${origin}/uploads/${filename}`,
             };
           });
           return { data: signedUrls, error: null };

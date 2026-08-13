@@ -269,20 +269,15 @@ function ScanCheckoutPage() {
       }
 
       // 2. Network fallback for codes not in the cached list
-      const token = localStorage.getItem("stockroom_token");
-      const res = await fetch(`/api/products?sku=${encodeURIComponent(code)}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-
-      if (res.status === 404) {
+      let product: any = null;
+      try {
+        product = await api.get<any>(`/products?sku=${encodeURIComponent(code)}`);
+      } catch {
         setScanFlash("miss");
         setTimeout(() => setScanFlash("idle"), 600);
         toast.warning(`No product found for barcode: ${code}`);
         return;
       }
-      if (!res.ok) throw new Error("Network error");
-
-      const product = await res.json();
       if (product?.id) {
         if (Number(product.quantity) <= 0) {
           setScanFlash("miss");
