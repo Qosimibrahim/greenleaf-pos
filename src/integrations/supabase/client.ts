@@ -1,6 +1,6 @@
 // Mocked Supabase client directing requests to our local Express / MongoDB backend.
 import type { Database } from './types';
-import { getApiBaseUrl, getApiOrigin } from '@/lib/api';
+import { api, getApiBaseUrl, getApiOrigin } from '@/lib/api';
 
 // In-memory callbacks for auth state changes
 const authStateListeners: Array<(event: string, session: any) => void> = [];
@@ -25,8 +25,12 @@ function getAuthToken(): string | null {
 function normalizeUrl(url: string): string {
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   const base = getApiBaseUrl();
-  const cleanPath = url.startsWith("/api/") ? url.slice(4) : url.startsWith("/") ? url : `/${url}`;
-  return `${base}${cleanPath}`;
+  let cleanPath = url;
+  if (cleanPath.startsWith("/api/")) cleanPath = cleanPath.slice(5);
+  else if (cleanPath.startsWith("api/")) cleanPath = cleanPath.slice(4);
+  else if (cleanPath.startsWith("/api")) cleanPath = cleanPath.slice(4);
+  else if (cleanPath.startsWith("/")) cleanPath = cleanPath.slice(1);
+  return `${base}/${cleanPath}`;
 }
 
 // Helper to make fetch requests
@@ -272,7 +276,7 @@ export const supabase = {
         return { data: { session: null }, error: null };
       }
       try {
-        const data = await makeRequest("/api/auth/session", "GET");
+        const data = await api.get<any>("/auth/session");
         if (data.session) {
           localStorage.setItem("supabase_session", JSON.stringify(data.session));
           return { data: { session: data.session }, error: null };
@@ -290,7 +294,7 @@ export const supabase = {
 
     async signInWithPassword({ email, password }: any) {
       try {
-        const data = await makeRequest("/api/auth/signin", "POST", { email, password });
+        const data = await api.post<any>("/auth/signin", { email, password });
         if (data.access_token) {
           localStorage.setItem("supabase_session", JSON.stringify(data));
           authStateListeners.forEach((listener) => listener("SIGNED_IN", data));
@@ -304,7 +308,7 @@ export const supabase = {
 
     async signUp({ email, password, options }: any) {
       try {
-        const data = await makeRequest("/api/auth/signup", "POST", {
+        const data = await api.post<any>("/auth/signup", {
           email,
           password,
           fullName: options?.data?.full_name,
