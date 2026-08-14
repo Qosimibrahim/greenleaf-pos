@@ -502,7 +502,7 @@ app.get("/api/invoices", authenticateToken, async (req: any, res: any) => {
     const userMap = new Map(users.map((u) => [u.id, u]));
     
     const formatted = invoices.map((inv) => {
-      const obj = inv.toJSON();
+      const obj: Record<string, any> = inv.toJSON();
       obj.clients = clientMap.get(inv.client_id);
       const creator = inv.createdBy ? userMap.get(inv.createdBy) : null;
       obj.created_by_user = {
@@ -527,7 +527,7 @@ app.get("/api/invoices/:id", authenticateToken, async (req: any, res: any) => {
 
     const client = await Client.findById(invoice.client_id);
     const creator = invoice.createdBy ? await User.findById(invoice.createdBy) : null;
-    const result = invoice.toJSON();
+    const result: Record<string, any> = invoice.toJSON();
     result.clients = client;
     result.created_by_user = {
       fullName: creator?.fullName || (invoice as any).created_by || "System",
@@ -737,7 +737,7 @@ app.get("/api/expenses", authenticateToken, async (req: any, res: any) => {
     const bankMap = new Map(banks.map((b) => [b.id, b]));
 
     const formatted = list.map((exp) => {
-      const obj = exp.toJSON();
+      const obj: Record<string, any> = exp.toJSON();
       obj.chart_of_accounts = coaMap.get(exp.expense_account_id);
       obj.bank_accounts = bankMap.get(exp.bank_account_id);
       return obj;
@@ -781,7 +781,7 @@ app.get("/api/payroll-runs", authenticateToken, async (req: any, res: any) => {
     const bankMap = new Map(banks.map((b) => [b.id, b]));
 
     const formatted = runs.map((run) => {
-      const obj = run.toJSON();
+      const obj: Record<string, any> = run.toJSON();
       obj.bank_accounts = bankMap.get(run.bank_account_id);
       return obj;
     });

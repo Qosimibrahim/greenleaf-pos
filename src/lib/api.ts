@@ -3,24 +3,16 @@
  * Injects Authorization: Bearer <token> from localStorage on every request.
  */
 
-const FALLBACK_RENDER_URL = "https://greenleaf-pos-api.onrender.com";
+const RENDER_BACKEND_URL = "https://greenleaf-pos-api.onrender.com";
 
 /**
  * Returns the base origin server URL without trailing slash (e.g. "https://greenleaf-pos-api.onrender.com").
  */
 export function getApiOrigin(): string {
-  // 1. Check environment variable
-  let envUrl = import.meta.env.VITE_API_URL;
-
-  // 2. Fallback to Render URL if on Vercel/Production
-  if (!envUrl && typeof window !== "undefined" && !window.location.hostname.includes("localhost")) {
-    envUrl = FALLBACK_RENDER_URL;
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "http://localhost:5000";
   }
-
-  // 3. Fallback to Localhost for local development
-  envUrl = envUrl || FALLBACK_RENDER_URL;
-
-  return envUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+  return RENDER_BACKEND_URL;
 }
 
 /**
@@ -32,7 +24,7 @@ export function getApiBaseUrl(): string {
 }
 
 function normalizeApiPath(path: string): string {
-  const base = getApiBaseUrl(); // https://greenleaf-pos-api.onrender.com/api
+  const base = getApiBaseUrl(); // "https://greenleaf-pos-api.onrender.com/api"
 
   // If full URL was passed in by mistake, return as-is
   if (path.startsWith("http://") || path.startsWith("https://")) {
