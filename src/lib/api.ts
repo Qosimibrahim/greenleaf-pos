@@ -39,10 +39,12 @@ function normalizeApiPath(path: string): string {
     return path;
   }
 
-  // Strip leading /api or / if present
+  // Strip leading /api, api/, or / if present
   let cleanPath = path;
   if (cleanPath.startsWith("/api/")) {
     cleanPath = cleanPath.slice(5); // Removes '/api/'
+  } else if (cleanPath.startsWith("api/")) {
+    cleanPath = cleanPath.slice(4); // Removes 'api/'
   } else if (cleanPath.startsWith("/api")) {
     cleanPath = cleanPath.slice(4); // Removes '/api'
   } else if (cleanPath.startsWith("/")) {

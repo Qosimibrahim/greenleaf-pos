@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { getApiBaseUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -78,12 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    const baseUrl = getApiBaseUrl();
-    fetch(`${baseUrl}/auth/session`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
+    api.get<any>("/auth/session")
+      .then((data: any) => {
         if (data?.session?.user) {
           setUser(parseUser(data.session.user));
         } else {
@@ -95,34 +91,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/auth/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as any).message || "Sign-in failed");
+    const data = await api.post<any>("/auth/signin", { email, password });
+    if (!data?.access_token) {
+      throw new Error("Sign-in failed: Invalid token response");
     }
-    const data = await res.json();
     saveToken(data.access_token);
     setUser(parseUser(data.user));
   }, []);
 
   const signUp = useCallback(
     async (email: string, password: string, fullName?: string) => {
-      const baseUrl = getApiBaseUrl();
-      const res = await fetch(`${baseUrl}/auth/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullName }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as any).message || "Sign-up failed");
+      const data = await api.post<any>("/auth/signup", { email, password, fullName });
+      if (!data?.access_token) {
+        throw new Error("Sign-up failed: Invalid token response");
       }
-      const data = await res.json();
       saveToken(data.access_token);
       setUser(parseUser(data.user));
     },

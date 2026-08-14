@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { getApiBaseUrl } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,13 +14,8 @@ export const Route = createFileRoute("/auth")({
   beforeLoad: async () => {
     const token = localStorage.getItem("auth_token");
     if (token) {
-      const res = await fetch(`${getApiBaseUrl()}/auth/session`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => null);
-      if (res?.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data?.session) throw redirect({ to: "/dashboard" });
-      }
+      const data = await api.get<any>("/auth/session").catch(() => null);
+      if (data?.session) throw redirect({ to: "/dashboard" });
     }
   },
   component: AuthPage,
