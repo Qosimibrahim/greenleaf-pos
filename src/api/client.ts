@@ -4,18 +4,23 @@
  * Injects Authorization: Bearer <token> from localStorage on all authenticated requests.
  */
 
-const RENDER_BACKEND_URL = "https://greenleaf-pos-api.onrender.com";
-
-export function getApiOrigin(): string {
-  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
-    return "http://localhost:5000";
-  }
-  return RENDER_BACKEND_URL;
-}
+const DEFAULT_API_URL = "https://greenleaf-pos-api.onrender.com/api";
 
 export function getApiBaseUrl(): string {
-  const origin = getApiOrigin();
-  return `${origin}/api`;
+  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) {
+    let envUrl = import.meta.env.VITE_API_URL as string;
+    if (envUrl.endsWith("/")) envUrl = envUrl.slice(0, -1);
+    return envUrl;
+  }
+  return DEFAULT_API_URL;
+}
+
+export function getApiOrigin(): string {
+  const base = getApiBaseUrl();
+  if (base.endsWith("/api")) {
+    return base.slice(0, -4);
+  }
+  return base;
 }
 
 function normalizeApiPath(path: string): string {
