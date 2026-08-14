@@ -58,10 +58,10 @@ function getToken(): string | null {
 /** Convert raw API user payload to AuthUser */
 function parseUser(raw: any): AuthUser {
   return {
-    id: raw.id,
-    email: raw.email,
-    role: (raw.user_metadata?.demo_role ?? raw.role ?? "staff") as AppRole,
-    fullName: raw.user_metadata?.full_name ?? raw.fullName,
+    id: raw?.id || raw?._id || "",
+    email: raw?.email || "",
+    role: (raw?.role ?? raw?.user_metadata?.demo_role ?? "staff") as AppRole,
+    fullName: raw?.fullName ?? raw?.user_metadata?.full_name,
   };
 }
 

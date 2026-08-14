@@ -4,8 +4,8 @@ import mongoose, { Schema, Document } from "mongoose";
 mongoose.set("toJSON", {
   virtuals: true,
   versionKey: false,
-  transform: (doc, ret) => {
-    ret.id = ret._id.toString();
+  transform: (_doc, ret: any) => {
+    ret.id = ret._id?.toString() ?? ret.id;
     delete ret._id;
     return ret;
   },
