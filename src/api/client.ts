@@ -1,31 +1,21 @@
 /**
  * Centralized REST API Client: src/api/client.ts
- * Points to https://greenleaf-pos-api.onrender.com/api (fallback to http://localhost:5000/api in local dev).
+ * Directly targets https://greenleaf-pos-api.onrender.com/api for all REST requests.
  * Injects Authorization: Bearer <token> from localStorage on all authenticated requests.
  */
 
-const DEFAULT_API_URL = "https://greenleaf-pos-api.onrender.com/api";
+export const API_BASE_URL = "https://greenleaf-pos-api.onrender.com/api";
+export const API_ORIGIN = "https://greenleaf-pos-api.onrender.com";
 
 export function getApiBaseUrl(): string {
-  if (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) {
-    let envUrl = import.meta.env.VITE_API_URL as string;
-    if (envUrl.endsWith("/")) envUrl = envUrl.slice(0, -1);
-    return envUrl;
-  }
-  return DEFAULT_API_URL;
+  return API_BASE_URL;
 }
 
 export function getApiOrigin(): string {
-  const base = getApiBaseUrl();
-  if (base.endsWith("/api")) {
-    return base.slice(0, -4);
-  }
-  return base;
+  return API_ORIGIN;
 }
 
 function normalizeApiPath(path: string): string {
-  const base = getApiBaseUrl();
-
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
@@ -41,7 +31,7 @@ function normalizeApiPath(path: string): string {
     cleanPath = cleanPath.slice(1);
   }
 
-  return `${base}/${cleanPath}`;
+  return `${API_BASE_URL}/${cleanPath}`;
 }
 
 export function getToken(): string | null {
