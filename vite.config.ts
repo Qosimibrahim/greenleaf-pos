@@ -8,8 +8,9 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   server: {
-    port: 8080,
+    port: 8081,
     strictPort: false,
+    allowedHosts: true, // Allow ngrok and external tunnels
     proxy: {
       "/api": {
         target: "http://localhost:5000",
